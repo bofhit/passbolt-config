@@ -1,0 +1,56 @@
+version: "3.9"
+services:
+  db:
+    image: mariadb:10.11
+    restart: unless-stopped
+    env_file:
+      - env/mysql.env
+    networks:
+      passbolt-net:
+        ipv4_address: 172.26.0.50
+        aliases:
+          - db
+    volumes:
+      - passbolt-db:/var/lib/mysql
+
+  passbolt:
+    image: passbolt/passbolt:latest-ce
+    #Alternatively you can use rootless:
+    #image: passbolt/passbolt:latest-ce-non-root
+    restart: unless-stopped
+    depends_on:
+      - db
+    env_file:
+      - env/passbolt.env
+    networks:
+      passbolt-net:
+        ipv4_address: 172.26.0.51 
+    volumes:
+      - passbolt-gpg:/etc/passbolt/gpg
+      - passbolt_jwt:/etc/passbolt/jwt
+    command:
+      [
+        "/usr/bin/wait-for.sh",
+        "-t",
+        "0",
+        "db:3306",
+        "--",
+        "/docker-entrypoint.sh",
+      ]
+    ports:
+      - 5010:443
+    #Alternatively for non-root images:
+    # - 80:8080
+    # - 443:4433
+
+networks:
+  passbolt-net:
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.26.0.48/28"
+
+volumes:
+  passbolt-db:
+  passbolt-gpg:
+  passbolt_jwt:
