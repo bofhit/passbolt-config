@@ -1,0 +1,2 @@
+# passbolt-config
+Passbolt configuration
